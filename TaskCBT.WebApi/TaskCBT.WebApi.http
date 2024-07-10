@@ -1,0 +1,6 @@
+@TaskCBT.WebApi_HostAddress = http://localhost:5043
+
+GET {{TaskCBT.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
