@@ -14,5 +14,7 @@ namespace TaskCBT.Application.Interfaces
         Task<bool> UpdateCustomerEmailAsync(UpdateCustomerEmailDto dto);
         Task<bool> VerifyEmailCodeAsync(VerifyEmailCodeDto dto);
         Task<bool> VerifyPhoneCodeAsync(VerifyPhoneCodeDto dto);
+        Task<bool> SetPinCodeAsync(SetPinCodeDto dto);
+        Task<bool> SetFingerprintAsync(SetFingerprintDto dto);
     }
 }

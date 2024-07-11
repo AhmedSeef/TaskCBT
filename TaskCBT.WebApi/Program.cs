@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TaskCBT.Application.Interfaces;
+using TaskCBT.Application.Mapping;
 using TaskCBT.Application.Services;
 using TaskCBT.Domain.Interfaces;
 using TaskCBT.Infrastructure.Data;
@@ -19,6 +20,9 @@ builder.Services.AddTransient<ICustomerRepository, CustomerRepository>();
 // Register services
 builder.Services.AddTransient<ICustomerService, CustomerService>();
 builder.Services.AddTransient<INotificationService, NotificationService>();
+
+// Add AutoMapper
+builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 
 // Add controllers
 builder.Services.AddControllers();

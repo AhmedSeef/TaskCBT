@@ -17,5 +17,7 @@ namespace TaskCBT.Domain.Entities
         public string PhoneVerificationCode { get; set; }
         public DateTime? PhoneVerificationCodeSentAt { get; set; }
         public RegistrationStatus RegistrationStatus { get; set; }
+        public string PinCode { get; set; }
+        public bool IsFingerprintEnabled { get; set; }
     }
 }

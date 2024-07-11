@@ -1,17 +1,15 @@
-﻿namespace TaskCBT.Application.Exceptions
+﻿using TaskCBT.Application.Dtos;
+using TaskCBT.Domain.enums;
+
+namespace TaskCBT.Application.Exceptions
 {
     public class CustomerAlreadyExistsException : Exception
     {
-        public CustomerAlreadyExistsException()
-        {
-        }
+        public RegistrationStatus RegistrationStatus { get; }
 
-        public CustomerAlreadyExistsException(string message) : base(message)
+        public CustomerAlreadyExistsException(string message, CustomerResponseDto customerData) : base(message)
         {
-        }
-
-        public CustomerAlreadyExistsException(string message, Exception inner) : base(message, inner)
-        {
+            RegistrationStatus = customerData.RegistrationStatus;
         }
     }
 }

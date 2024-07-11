@@ -1,4 +1,5 @@
-﻿using TaskCBT.Application.Dtos;
+﻿using AutoMapper;
+using TaskCBT.Application.Dtos;
 using TaskCBT.Application.Exceptions;
 using TaskCBT.Application.Interfaces;
 using TaskCBT.Domain.Entities;
@@ -11,34 +12,41 @@ namespace TaskCBT.Application.Services
     {
         private readonly ICustomerRepository _customerRepository;
         private readonly INotificationService _notificationService;
+        private readonly IMapper _mapper;
 
-        public CustomerService(ICustomerRepository customerRepository, INotificationService notificationService)
+        public CustomerService(ICustomerRepository customerRepository, INotificationService notificationService, IMapper mapper)
         {
             _customerRepository = customerRepository;
             _notificationService = notificationService;
+            _mapper = mapper;
         }
 
         public async Task<CustomerResponseDto> RegisterCustomerAsync(RegisterCustomerDto dto)
         {
             var existingCustomer = await _customerRepository.GetByICNumberAsync(dto.ICNumber);
             if (existingCustomer is not null)
-                throw new CustomerAlreadyExistsException("Customer already exists with the provided IC number.");
-
-            var customer = new Customer
             {
-                CustomerName = dto.CustomerName,
-                ICNumber = dto.ICNumber,
-                MobileNumber = dto.MobileNumber,
-                Email = dto.Email,
-                IsEmailVerified = false,
-                IsPhoneNumberVerified = false,
-                HasAgreedToTerms = false,
-                RegistrationStatus = RegistrationStatus.Incomplete,
-                EmailVerificationCode = GenerateVerificationCode(),
-                EmailVerificationCodeSentAt = DateTime.UtcNow,
-                PhoneVerificationCode = GenerateVerificationCode(),
-                PhoneVerificationCodeSentAt = DateTime.UtcNow
-            };
+                var customerData = _mapper.Map<CustomerResponseDto>(existingCustomer);
+
+                if (existingCustomer.RegistrationStatus == RegistrationStatus.Completed)
+                {
+                    throw new CustomerAlreadyExistsException("There is an account registered with the IC number. Please login to continue.", customerData);
+                }
+                else
+                {
+                    throw new CustomerAlreadyExistsException("There is an account registered with the IC number. Registration is not completed. Please complete the registration process.", customerData);
+                }
+            }
+
+            var customer = _mapper.Map<Customer>(dto);
+            customer.IsEmailVerified = false;
+            customer.IsPhoneNumberVerified = false;
+            customer.HasAgreedToTerms = false;
+            customer.RegistrationStatus = RegistrationStatus.Incomplete;
+            customer.EmailVerificationCode = GenerateVerificationCode();
+            customer.EmailVerificationCodeSentAt = DateTime.UtcNow;
+            customer.PhoneVerificationCode = GenerateVerificationCode();
+            customer.PhoneVerificationCodeSentAt = DateTime.UtcNow;
 
             await _customerRepository.AddAsync(customer);
 
@@ -46,17 +54,7 @@ namespace TaskCBT.Application.Services
             await _notificationService.SendEmailAsync(customer.Email, "Verification Code", $"Your email verification code is: {customer.EmailVerificationCode}");
             await _notificationService.SendSmsAsync(customer.MobileNumber, $"Your phone verification code is: {customer.PhoneVerificationCode}");
 
-            return new CustomerResponseDto
-            {
-                CustomerName = customer.CustomerName,
-                ICNumber = customer.ICNumber,
-                MobileNumber = customer.MobileNumber,
-                Email = customer.Email,
-                IsEmailVerified = customer.IsEmailVerified,
-                IsPhoneNumberVerified = customer.IsPhoneNumberVerified,
-                HasAgreedToTerms = customer.HasAgreedToTerms,
-                RegistrationStatus = customer.RegistrationStatus
-            };
+            return _mapper.Map<CustomerResponseDto>(customer);
         }
 
         public async Task<Customer> LoginCustomerAsync(LoginCustomerDto dto)
@@ -181,6 +179,28 @@ namespace TaskCBT.Application.Services
             if (customer.IsEmailVerified)
                 customer.RegistrationStatus = RegistrationStatus.Completed;
 
+            await _customerRepository.UpdateAsync(customer);
+            return true;
+        }
+
+        public async Task<bool> SetPinCodeAsync(SetPinCodeDto dto)
+        {
+            var customer = await _customerRepository.GetByICNumberAsync(dto.ICNumber);
+            if (customer is null)
+                throw new CustomerNotFoundException("Customer not found.");
+
+            customer.PinCode = dto.PinCode;
+            await _customerRepository.UpdateAsync(customer);
+            return true;
+        }
+
+        public async Task<bool> SetFingerprintAsync(SetFingerprintDto dto)
+        {
+            var customer = await _customerRepository.GetByICNumberAsync(dto.ICNumber);
+            if (customer is null)
+                throw new CustomerNotFoundException("Customer not found.");
+
+            customer.IsFingerprintEnabled = dto.IsFingerprintEnabled;
             await _customerRepository.UpdateAsync(customer);
             return true;
         }

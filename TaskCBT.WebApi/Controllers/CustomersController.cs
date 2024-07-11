@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using TaskCBT.Application.Dtos;
+using TaskCBT.Application.Exceptions;
 using TaskCBT.Application.Interfaces;
 
 namespace TaskCBT.WebApi.Controllers
@@ -19,8 +19,15 @@ namespace TaskCBT.WebApi.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterCustomerDto dto)
         {
-            var customer = await _customerService.RegisterCustomerAsync(dto);
-            return Ok(customer);
+            try
+            {
+                var customer = await _customerService.RegisterCustomerAsync(dto);
+                return Ok(customer);
+            }
+            catch (CustomerAlreadyExistsException ex)
+            {
+                return Conflict(new { message = ex.Message, registrationStatus = ex.RegistrationStatus });
+            }
         }
 
         [HttpPost("login")]
@@ -30,17 +37,17 @@ namespace TaskCBT.WebApi.Controllers
             return Ok(customer);
         }
 
-        [HttpPost("verify-email")]
-        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto dto)
+        [HttpPost("verify-email-code")]
+        public async Task<IActionResult> VerifyEmailCode([FromBody] VerifyEmailCodeDto dto)
         {
-            var result = await _customerService.VerifyEmailAsync(dto.Email);
+            var result = await _customerService.VerifyEmailCodeAsync(dto);
             return Ok(result);
         }
 
-        [HttpPost("verify-phone")]
-        public async Task<IActionResult> VerifyPhoneNumber([FromBody] VerifyPhoneDto dto)
+        [HttpPost("verify-phone-code")]
+        public async Task<IActionResult> VerifyPhoneCode([FromBody] VerifyPhoneCodeDto dto)
         {
-            var result = await _customerService.VerifyPhoneNumberAsync(dto.MobileNumber);
+            var result = await _customerService.VerifyPhoneCodeAsync(dto);
             return Ok(result);
         }
 
@@ -62,6 +69,20 @@ namespace TaskCBT.WebApi.Controllers
         public async Task<IActionResult> UpdateEmail([FromBody] UpdateCustomerEmailDto dto)
         {
             var result = await _customerService.UpdateCustomerEmailAsync(dto);
+            return Ok(result);
+        }
+
+        [HttpPost("set-pin")]
+        public async Task<IActionResult> SetPinCode([FromBody] SetPinCodeDto dto)
+        {
+            var result = await _customerService.SetPinCodeAsync(dto);
+            return Ok(result);
+        }
+
+        [HttpPost("set-fingerprint")]
+        public async Task<IActionResult> SetFingerprint([FromBody] SetFingerprintDto dto)
+        {
+            var result = await _customerService.SetFingerprintAsync(dto);
             return Ok(result);
         }
     }
